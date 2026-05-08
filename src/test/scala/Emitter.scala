@@ -10,17 +10,30 @@ import yafl.typer.Typer
 
 final class EmitterTests extends munit.FunSuite:
 
+  test("argc"):
+    val input = SourceFile("test", "#argc")
+    val wasm = compile(input)
+    val main = wasm.`export`("main")
+    writeArguments(wasm, IArray(31, 11))
+    assertEquals(main.apply()(0), 2L)
+
   test("integer addition"):
     val input = SourceFile("test", "40 + 2")
-    val wasm = Wat2Wasm.parse(compile(input))
-    val m = chicory.wasm.Parser.parse(wasm)
-    val i = chicory.runtime.Instance.builder(m).build()
-    val f = i.`export`("main")
-    assertEquals(f.apply()(0), 42L)
+    val main = compile(input).`export`("main")
+    assertEquals(main.apply()(0), 42L)
 
-  /** Parses and type check the program in `input`. */
-  private def compile(input: SourceFile): String =
+  /** Compiles `input` to a WebAssembly module and returns an instance of it. */
+  private def compile(input: SourceFile): chicory.runtime.Instance =
     val program = Typer.check(Parser.parse(input))
-    Emitter.emit(program)
+    val binary = Wat2Wasm.parse(Emitter.emit(program))
+    val m = chicory.wasm.Parser.parse(binary)
+    chicory.runtime.Instance.builder(m).build()
+
+  /** Initializes the command-line arguments of `wasm` to `values`. */
+  private def writeArguments(wasm: chicory.runtime.Instance, values: IArray[Int]): Unit =
+    val m = wasm.memory()
+    m.writeI32(0, values.length)
+    def loop(i: Int): Unit =
+      if i >= values.length then () else m.writeI32(4 + (i * 4), values(i))
 
 end EmitterTests

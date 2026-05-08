@@ -22,6 +22,10 @@ sealed trait Type:
   def contains(that: Type.Variable.Unification): Boolean =
     false
 
+  /** Returns an arrow type from `this` to `that`. */
+  def to(that: Type): Type.Arrow =
+    Type.Arrow(this, that)
+
 object Type:
 
   /** The type of an uninterpreted value (e.g., an integer). */
@@ -71,22 +75,16 @@ object Type:
   end Variable
 
   /** The type of a function. */
-  case class Arrow(from: Type, to: Type) extends Type:
+  case class Arrow(domain: Type, codomain: Type) extends Type:
 
     override def map(transform: Type => Type): Type =
-      transform(Arrow(transform(from), transform(to)))
+      transform(Arrow(transform(domain), transform(codomain)))
 
     override def contains(that: Type.Variable.Unification): Boolean =
-      from.contains(that) || to.contains(that)
+      domain.contains(that) || domain.contains(that)
 
     override def toString(): String =
-      s"(${from}) -> ${to}"
-
-  object Arrow:
-
-    /** Returns the type of a binary function from `t` and `u` to `v`. */
-    def binary(t: Type, u: Type, v: Type): Arrow =
-      Arrow(t, Arrow(u, v))
+      s"(${domain}) -> ${codomain}"
 
   end Arrow
 

@@ -37,11 +37,18 @@ object Typer:
 
     /** A typing environment containing the symbols of the standard library. */
     def builtin: Environment = {
+      import Type.Ground as G
       val terms = Map[String, Type](
-        "infix+" -> Type.Arrow.binary(Type.Ground.Int, Type.Ground.Int, Type.Ground.Int),
-        "infix-" -> Type.Arrow.binary(Type.Ground.Int, Type.Ground.Int, Type.Ground.Int),
-        "infix*" -> Type.Arrow.binary(Type.Ground.Int, Type.Ground.Int, Type.Ground.Int),
-        "infix/" -> Type.Arrow.binary(Type.Ground.Int, Type.Ground.Int, Type.Ground.Int),
+        // Returns the number of command-line arguments.
+        "#argc" -> G.Int,
+        // Returns the `i`-th command-line arguments.
+        "#argv" -> G.Int.to(G.Int),
+
+        // Integer arithmetic.
+        "infix+" -> G.Int.to(G.Int.to(G.Int)),
+        "infix-" -> G.Int.to(G.Int.to(G.Int)),
+        "infix*" -> G.Int.to(G.Int.to(G.Int)),
+        "infix/" -> G.Int.to(G.Int.to(G.Int)),
       )
       Environment(terms, List())
     }

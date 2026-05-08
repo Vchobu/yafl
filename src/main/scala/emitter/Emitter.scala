@@ -19,7 +19,25 @@ object Emitter:
   /** Returns code of `program`. */
   def emit(program: TypedProgram): String =
     val main = emitMain(program.syntax)(using Context(program.types))
-    s"(module ${main.value})"
+    s"(module (memory $$__m 1) ${argc} ${argv} ${main.value})"
+
+  /** The code of the built-in `argc` function. */
+  private val argc: String =
+    """
+    (func $#argc (result i32)
+      (i32.const 0x0000)
+      (i32.load)
+    )
+    """.stripIndent
+
+  /** The code of the built-in `argv` function. */
+  private val argv: String =
+    """
+    (func $#argv (param $i i32) (result i32)
+      (i32.const 4) (local.get $i) (i32.mul)
+      (i32.load)
+    )
+    """.stripIndent
 
   /** Returns the code of the main function. */
   private def emitMain(body: Syntax[TermTree])(using Context): Result[Rope] = {
@@ -29,7 +47,6 @@ object Emitter:
       case u =>
         throw Diagnostic(s"root term should have 'Int', found '${u}'", body.span)
 
-    val code = Rope(s"(func (export \"main\") (result ${output})")
     emitValue(body).map { (code) =>
       Rope(s"(func (export \"main\") (result ${output})") ++ code ++ ")"
     }
@@ -39,6 +56,12 @@ object Emitter:
   private def emitValue(tree: Syntax[TermTree])(using Context): Result[Rope] = {
     import TermTree.TermApplication as F
     tree.value match
+      case TermTree.Variable(n) =>
+        if n.startsWith("#") then
+          result(Rope(s"(call $$${n})"))
+        else
+          result(Rope(s"(local.get $$${n})"))
+
       case TermTree.IntegerLiteral(n) =>
         result(Rope(s"(i32.const ${n})"))
 

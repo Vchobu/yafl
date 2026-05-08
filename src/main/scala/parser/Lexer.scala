@@ -31,6 +31,8 @@ extension (source: SourceFile)
     // Read a single token unless there's nothing left in the input.
     if position >= source.end then
       None
+    else if source.text(position) == '#' then
+      Some(takeBuiltinIdentifier(position))
     else if Lexer.isLetterOrUnderscore(source.text(position)) then
       Some(takeKeywordOrIdentifier(position))
     else if Lexer.isDecimalDigit(source.text(position)) then
@@ -79,6 +81,14 @@ extension (source: SourceFile)
       else
         None
     loop(0, start)
+
+  /** Reads a built-in identifier in `source` from `start`. */
+  private def takeBuiltinIdentifier(start: SourceFile.Index): Token =
+    val end = takeWhile(start + 1)(Lexer.isLetterOrUnderscore)
+    if (source.text(start) != '#') || (end == (start + 1)) then
+      Token(Token.error, SourceSpan(start, end, source))
+    else
+      Token(Token.identifier, SourceSpan(start, end, source))
 
   /** Reads a keyword or identifier in `source` from `start`. */
   private def takeKeywordOrIdentifier(start: SourceFile.Index): Token =

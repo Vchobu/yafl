@@ -40,6 +40,15 @@ final class LexerTests extends munit.FunSuite:
       Token.boolean)
     assert(found.sameElements(expected))
 
+  test("built-in identifiers"):
+    val input = SourceFile("test", "# #argc #argv")
+    val found = tokens(input).map((t) => t.tag)
+    val expected = IArray(
+      Token.error,
+      Token.identifier,
+      Token.identifier)
+    assert(found.sameElements(expected))
+
   test("integer literals"):
     val input = SourceFile("test", "0 123 12")
     val found = tokens(input).map((t) => t.tag)

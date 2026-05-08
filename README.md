@@ -57,6 +57,7 @@ simple-term ::=
   | boolean-literal
   | integer-literal
   | identifier
+  | builtin-identifier
   | term-abstraction
   | type-abstraction
   | conditional
@@ -69,6 +70,10 @@ unit-literal ::=
 boolean-literal ::=
   | 'true'
   | 'false'
+
+builtin-identifier ::
+  | '#argc'
+  | '#argv'
 
 term-abstraction ::=
   | '(' identifier ':' type (',' identifier ':' type)* ')' '=>' term
