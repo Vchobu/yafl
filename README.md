@@ -2,6 +2,15 @@
 
 A toy implementation of a tiny functional programming language.
 
+## Summary
+
+Yafl is essentially an implementation of [System F](https://en.wikipedia.org/wiki/System_F) with a few extensions.
+The following illustrates a simple program:
+
+```yafl
+((x: Int) => x + 1) 2
+```
+
 ## Syntax
 
 The syntax of Yafl is described by the production rules below.
