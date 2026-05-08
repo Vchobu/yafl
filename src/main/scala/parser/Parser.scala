@@ -2,7 +2,6 @@ package yafl.parser
 
 import yafl.{Diagnostic, SourceFile, SourceSpan}
 import yafl.syntax.{Syntax, TermTree, TypeTree}
-import yafl.parser.Token.`then`
 
 object Parser:
 
@@ -25,61 +24,14 @@ object Parser:
     * and a context denoting the state of the parser. The latter can be understood as the "state"
     * of the parser, which is meant to flow into parsing methods.
     */
-  final class Result[+T](val stack: T, val context: Context):
-
-    /** Returns a copy of `this` with its stack transformed by `transform`.
-      *
-      * Use this method to modify the contents of a result without modifying its context. More
-      * formally, if `r = Result(v, x)`, then `r.map(f)` is equal to `Result(f(v), x)`.
-      */
-    def map[U](transform: T => U): Result[U] =
-      new Result(transform(stack), context)
-
-    /** Returns the result of applying `after` on the contents of `this`.
-      *
-      * Use this method to combine the value of a result with a function applied in the context
-      * associated with that value. More formally, if `r = Result(v, x)`, then `r.and(f)` is
-      * equal to `f(v)(using x)`.
-      *
-      * To illustrate, consider the following definitions:
-      *
-      *     def f(using Context): Result[Int] = ???
-      *     def g(n: Int)(using Context): Result[Boolean] = Result(n != 0)
-      *
-      * Given some context, the function `f` is assumed to produce an integer value together with
-      * an updated context. We can compose this function with `g` with `f.and(g)` so that `g` will
-      * be applied on the integer produced by `f` and the updated context.
-      */
-    def and[U](after: T => (Context ?=> Result[U])): Result[U] =
-      after(stack)(using context)
-
-    /** Returns `stack` in the context returned by `after`.
-      *
-      * Use this method to apply a function in the context wrapped in a result and discard its
-      * result while keeping the associated context. More formally, if `r = Result(v, x)`, then
-      * `r.andDiscard(f)` is equal to `Result(v)(using f(using x))`.
-     */
-    def andDiscard[U](after: Context ?=> Result[U]): Result[T] =
-      new Result(stack, after(using context).context)
-
-    /** Returns `stack` along with the result of applying `after` on the contents of `this`. */
-    def andCombine[U](after: Context ?=> Result[U]): Result[(T, U)] =
-      and((a) => after.map((b) => (a, b)))
-
-  object Result:
-
-    /** Creates an instance wrapping `value`, which is defined in `context`. */
-    def apply[T](value: T)(using context: Context): Result[T] =
-      new Result(value, context)
-
-  end Result
+  type Result[+T] = yafl.Result[T, Context]
 
   /** Parses the program written in `source`. */
   def parse(source: SourceFile): Syntax[TermTree] =
-    val result = term(using Context(source, source.start))
-    if peek(using result.context).isDefined then
-      throw expected("end of input")(using result.context)
-    result.stack
+    val parsed = term(using Context(source, source.start))
+    if peek(using parsed.state).isDefined then
+      throw expected("end of input")(using parsed.state)
+    parsed.value
 
   /** Parses a term. */
   private def term(using Context): Result[Syntax[TermTree]] =
@@ -105,7 +57,7 @@ object Parser:
             }
           }
           .and(loop)
-      case _ => Result(lhs)
+      case _ => result(lhs)
     simpleTerm.and(loop)
   }
 
@@ -115,6 +67,7 @@ object Parser:
       case Some(Token.boolean) => booleanLiteral
       case Some(Token.integer) => integerLiteral
       case Some(Token.identifier) => termIdentifier
+      case Some(Token.`if`) => conditional
       case Some(Token.leftParenthesis) => lambdaOrParenthesized
       case _ => throw expected("term")
 
@@ -156,7 +109,7 @@ object Parser:
             (parameterOrTerm, takeIf(Token.hasTag(Token.colon))) match
               case (Syntax(n: TermTree.Variable, s), Some(c)) =>
                 // `parameterOrTerm` is actually a parameter declaration.
-                typ3(using c.context)
+                typ3(using c.state)
                   .andDiscard(take(Token.rightParenthesis, "')'"))
                   .andDiscard(take(Token.thickArrow, "'=>'"))
                   .and((a) => term.map { (b) =>
@@ -194,7 +147,7 @@ object Parser:
   /** Parses a token. */
   private def take()(using Context): Result[Token] =
     val t = peek.get
-    Result(t)(using context.after(t))
+    result(t)(using context.after(t))
 
   /** Parses the next token iff it has tag `k`; otherwise, reports that `s` was expected. */
   private def take(k: Token.Tag, s: String)(using Context): Result[Token] =
@@ -203,7 +156,7 @@ object Parser:
   /** Parses the next token iff it satisfies the given predicate; otherwise, returns `None`. */
   private def takeIf(predicate: Token => Boolean)(using Context): Option[Result[Token]] =
     peek match
-      case Some(t) if predicate(t) => Some(Result(t)(using context.after(t)))
+      case Some(t) if predicate(t) => Some(result(t)(using context.after(t)))
       case _ => None
 
   /** Returns a parse error reporting that `s` was expected at `site`. */
@@ -218,5 +171,9 @@ object Parser:
   /** Returns the current context. */
   private def context(using ctx: Context): Context =
     ctx
+
+  /** Returns a result wrapping `value` together with the current context. */
+  private def result[T](value: T)(using Context): Result[T] =
+    yafl.Result(value)
 
 end Parser
