@@ -1,30 +1,123 @@
 package yafl
 
+import com.dylibso.chicory.tools.wasm.Wat2Wasm
+
 import java.io.FileNotFoundException
 import scala.io.AnsiColor.{BOLD, GREEN, RED, RESET}
 
+import yafl.emitter.Emitter
 import yafl.parser.Parser
 import yafl.typer.Typer
+
+/** The type of a file being generate by a compiler run. */
+enum OutputContents:
+
+  /** The abstract syntax that has been parsed. */
+  case Syntax
+
+  /** The human-readable form of the WebAssembly that has been compiled. */
+  case Wat
+
+  /** The binary form of the WebAssembly that has been compiled. */
+  case Wasm
+
+end OutputContents
+
+/** The command line arguments that have been passed to start the program. */
+case class Arguments(filepath: String, output: String, stage: OutputContents)
+
+object Arguments:
+
+  /** An error that occurred while parsing command line arguments. */
+  trait Error extends Exception
+
+  /** An error indicating that a command line argument is missing. */
+  final class Missing(val name: String) extends Error:
+    override def toString(): String =
+      s"missing argument: ${name}"
+
+  /** An error indicating that a command line argument was unexpected. */
+  final class Unexpected(val argument: String) extends Error:
+    override def toString(): String =
+      s"unexpected argument: '${argument}'"
+
+  /** Parses command line arguments from `argv`, which is the sequence of strings that has been
+    * passed to the main function.
+    */
+  def apply(argv: Array[String]): Arguments =
+    def loop(
+        i: Int, filepath: Option[String], output: Option[String], stage: OutputContents
+    ): Arguments =
+      if i >= argv.length then filepath match
+        case Some(f) => Arguments(f, output.getOrElse("out"), stage)
+        case None => throw Missing("filename")
+      else argv(i) match
+        case "-o" if (i + 1) < argv.length =>
+          loop(i + 2, filepath, Some(argv(i + 1)), stage)
+        case "-o" =>
+          throw Missing("output")
+        case "--syntax" =>
+          loop(i + 1, filepath, output, OutputContents.Syntax)
+        case "--wat" =>
+          loop(i + 1, filepath, output, OutputContents.Wat)
+        case "--wasm" =>
+          loop(i + 1, filepath, output, OutputContents.Wasm)
+        case a if filepath.isEmpty =>
+          loop(i + 1, Some(a), output, stage)
+        case a =>
+          throw Unexpected(a)
+    loop(0, None, None, OutputContents.Wasm)
+
+end Arguments
+
+given scala.util.CommandLineParser.FromString[Arguments] with
+
+  def fromString(s: String): Arguments =
+    Arguments(s.split("\\s+"))
+
+end given
 
 /** The entry point of the application.
  *
  *  @param filepath The path to the input file.
  */
-@main def Main(filepath: String): Unit =
+@main def Main(argv: String*): Unit = {
   try
+    // Parse the command line arguments.
+    val arguments = Arguments(argv.toArray)
+
     // Load the source file from disk.
-    val source = SourceFile.contentsOf(filepath)
+    val source = SourceFile.contentsOf(arguments.filepath)
 
-    // Parse and type check the program.
+    // Run the compilation pipeline.
     val program = Parser.parse(source)
-    Typer.check(program)(using Typer.Context.builtin)
+    if arguments.stage == OutputContents.Syntax then
+      write(program.toString, arguments.output)
+    else
+      val types = Typer.check(program)
+      val wat = Emitter.emit(program, types)
+      if arguments.stage == OutputContents.Wat then
+        write(wat, arguments.output)
+      else
+        write(java.util.Arrays.toString(Wat2Wasm.parse(wat)), arguments.output)
 
-    println(program)
   catch
+    case e: Arguments.Error => error(None, e.toString)
     case e: FileNotFoundException => error(None, s"no such file: ${e.getMessage()}")
     case e: Diagnostic => render(e)
     case e => throw e
 }
+
+/** Writes `contents`` to `destination`, which is either a file path or the string "-", in which
+  * in denotes the standard output.
+  */
+def write(contents: String, destination: String): Unit =
+  if destination == "-" then
+    println(contents)
+  else
+    val f = new java.io.File(destination)
+    val p = new java.io.PrintWriter(f)
+    try { p.write(contents) } finally { p.close() }
 
 /** Logs a success to the standard output. */
 def success(message: String): Unit =
