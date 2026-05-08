@@ -23,7 +23,8 @@ import yafl.typer.Typer
   catch
     case e: FileNotFoundException => error(None, s"no such file: ${e.getMessage()}")
     case e: Diagnostic => render(e)
-    case e => error(None, e.toString)
+    case e => throw e
+}
 
 /** Logs a success to the standard output. */
 def success(message: String): Unit =
