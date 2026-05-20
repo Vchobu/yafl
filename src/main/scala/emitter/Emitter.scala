@@ -72,6 +72,25 @@ object Emitter:
       case TermTree.BooleanLiteral(n) =>
         result(Rope(s"(i32.const ${if n then 1 else 0})"))
 
+      /**
+        * WASM code
+          (if (result i32)
+            (then i32.const 1)
+            (else i32.const 2))
+        */
+      case TermTree.Conditional(condition, success, failure) =>
+        emitAsValue(condition).and { c =>
+          emitAsValue(success).and { s =>
+            emitAsValue(failure).map { f =>
+              val code =
+                c ++ Rope("(if (result i32) (then ") ++
+                  s ++ Rope(") (else ") ++
+                  f ++ Rope("))")
+              code
+            }
+          }
+        }
+
       case TermTree.TermApplication(callee, a) => callee.value match
         case TermTree.TermApplication(InfixOperator(f), b) =>
           emitAsValue(b).and((lhs) => emitAsValue(a).map { (rhs) =>

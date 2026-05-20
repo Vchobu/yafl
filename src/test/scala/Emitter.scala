@@ -30,6 +30,11 @@ final class EmitterTests extends munit.FunSuite:
     val main = compile(input).`export`("main")
     assertEquals(main.apply()(0), 42L)
 
+  test("conditional"):
+    val input = SourceFile("test", "if true then 1 else 2")
+    val main = compile(input).`export`("main")
+    assertEquals(main.apply()(0), 1L)
+
   /** Compiles `input` to a WebAssembly module and returns an instance of it. */
   private def compile(input: SourceFile): chicory.runtime.Instance =
     val program =  Optimizer.optimize(Typer.check(Parser.parse(input)))
