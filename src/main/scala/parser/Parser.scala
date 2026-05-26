@@ -189,6 +189,20 @@ object Parser:
         }
       }
 
+  /** Parses an arrow type of the form T -> U */
+  private def arrowType(using Context): Result[Syntax[TypeTree]] =
+    typ3.and { (lhs) =>
+      peek match
+        case Some(Token.thinArrow) =>
+          take(Token.thinArrow, "'->'").and { (_) =>
+            arrowType.map { (rhs) =>
+              Syntax(TypeTree.Arrow(lhs, rhs), lhs.span.extendedToCover(rhs.span))
+            }
+          }
+        case _ =>
+          result(lhs)
+    }
+
   /** The name of a parameter and its ascription. */
   private type Parameter = (Syntax[TermTree.Variable], Syntax[TypeTree])
 
