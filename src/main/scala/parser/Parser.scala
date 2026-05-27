@@ -5,6 +5,8 @@ import yafl.syntax.{Syntax, TermTree, TypeTree}
 import yafl.parser.Token.thickArrow
 import yafl.parser.Token.leftParenthesis
 
+import scala.annotation.tailrec
+
 object Parser:
 
   /** The context in which parsing is taking place.
@@ -86,9 +88,42 @@ object Parser:
   private def prefixTerm(using Context): Result[Syntax[TermTree]] =
     typeApplication
 
-  /** Parses a simple term or a type application. */
+  /** ************************************************************************************** */
+
+  /** Parses a simple term or a type application. e.g. f [A] [B] */
   private def typeApplication(using Context): Result[Syntax[TermTree]] =
-    simpleTerm
+    @tailrec
+    // boucle récursive : empile les [T] sur l'accumulateur (acc)
+    def loop(acc: Syntax[TermTree])(using Context): Result[Syntax[TermTree]] =
+      //takeIf(predicate: Token => Boolean)(using Context) = chercher [
+      // et retourne un Option[Result[Token]] e.g. some(x)
+      takeIf(Token.hasTag(Token.leftBracket)) match
+        // Some(x) : un '[' a été consommé ; x.state = position juste après le [
+        case Some(x) =>
+          // le '[' a déjà été consommé par takeIf ; on lit le type à partir de x.state
+          val argument = typ3(using x.state) // parse (lit) le type à partir de après la position [
+          // take(k: Token.Tag, s: String)(using Context)
+          // si nextToken is tag ] -->consomme ] et retourn Result[Token] (le token + l'état avancé après lui)
+          // garder pour la position
+          val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
+          // on span entre début de l'acc à ]
+          val span = acc.span.extendedToCover(closed.value.span)
+          // on fait le syntax tree
+          // TypeApplication(acc, type) + sa position source
+          // syntax = TermTree + span (2 positions dans le source file)
+          // TypeApplication != typeApplicsation
+          val node = Syntax(TermTree.TypeApplication(acc, argument.value), span)
+          loop(node)(using closed.state) // recommence pour un [ suivant
+        // pas de [ = on s'arrête et on retourne l'accumulateur
+        case _ =>
+          result(acc)
+    // lit un terme simple
+    val base = simpleTerm // f [A] [B] avec base.value = f et base.state = après f
+    // base.value = arbre syntaxique du simpleTerm
+    // base.state = position du curseur après le simpleTerm
+    loop(base.value)(using base.state) // démarre avec f --> on cherche le prochain [ --> [A] [B]
+
+  /** ************************************************************************************** */
 
   /** Parses a simple term. */
   private def simpleTerm(using Context): Result[Syntax[TermTree]] =
