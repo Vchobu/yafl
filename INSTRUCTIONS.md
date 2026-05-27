@@ -106,7 +106,7 @@ All tasks have an associated test that you can use to exercise your implementati
   Consequently, it is straightforward for the parser to recognize the start of a construction.
   You can take inspiration from the part of the parser that is handling the expression of a lambda to write your code.
 
-- [ ] **Type abstractions** (required) **Raphael**
+- [x] **Type abstractions** (required) **Raphael**
 
   Type abstractions have the form `[T] => e`.
   Similarly to conditionals and bindings, they also start with a token (i.e., `[`) that cannot occur at the beginning of any other construction.
@@ -128,14 +128,14 @@ All tasks have an associated test that you can use to exercise your implementati
 
   Like for type abstractions, although the grammar specifies that a universal type may be introduced with more than one type variable, you can implement this step assuming that there is exactly one.
 
-- [ ] **Arrow types** (required) **Raphael**
+- [x] **Arrow types** (required) **Raphael**
 
   Arrow types have the form `T -> U`.
   Consequently, unlike the constructions mentioned above, the parser cannot simply use a single token to recognize the start of an arrow.
   However, notice that the occurrence of an arrow operator (i.e., `->`) following a type expression signals the presence of an arrow.
   Further, since the operator is right-associative, the parser can simply recurse to recognize the type expression on the right-hand side.
 
-- [ ] **Parenthesized types** (required) **Raphael**
+- [x] **Parenthesized types** (required) **Raphael**
 
   Just like term expressions, type expressions can be written in parentheses to override default precedence or simply to improve legibility.
   For example, the type expression `T -> U -> V` does not denote the same type as `(T -> U) -> V`.
