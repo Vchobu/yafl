@@ -228,7 +228,7 @@ Further, all tests rely on the parser behaving correctly.
   For example, `(z : Int) => let x = z : x + x` is already in normal form because moving the binding outside of the term abstraction would leave `z` unbound.
 
 
-- [ ] **Dead code elimination** (optional)
+- [ ] **Dead code elimination** (optional) **Gaetan**
 
   [Dead code elimination](https://en.wikipedia.org/wiki/Dead-code_elimination) consists of removing unreachable code from the program.
   For example, both `if true then 1 else 2 * 3` and `let x = 2 ; a` can be rewritten `1`.
@@ -236,7 +236,7 @@ Further, all tests rely on the parser behaving correctly.
   For this task, your goal is to eliminate conditionals whose condition is provably `true` or `false` as well as bindings that have no use.
   The examples above illustrate.
 
-- [ ] **Constant propagation** (optional)
+- [ ] **Constant propagation** (optional) **Vadym**
 
   Constant propagation consists of replacing variables denoting a constant by their values.
   For example, `let x = 2 ; x + y` can be rewritten `2 + y`.
@@ -283,7 +283,7 @@ These can be implemented in any order, although it is recommended to start with 
 Note that all available tests rely on the parser behaving correctly.
 Most tests can only pass if you have also implemented part of the optimizer or if your compiler can handle closures.
 
-- [ ] **Built-in arithmetic and comparison** (optional)
+- [ ] **Built-in arithmetic and comparison** (optional) **Raphael**
 
   The current implementation can only handle two built-in operations, namely addition and subtraction.
   For this task, your goal is to support the rest.

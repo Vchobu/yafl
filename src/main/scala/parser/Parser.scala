@@ -230,7 +230,8 @@ object Parser:
   private def arrowType(using Context): Result[Syntax[TypeTree]] =
     simpleType.and { (lhs) =>
       peek match
-        case Some(Token.thinArrow) =>
+        case Some(t) if t.tag == Token.thinArrow =>
+        // case Some(Token.thinArrow) =>
           take(Token.thinArrow, "'->'").and { (_) =>
             arrowType.map { (rhs) =>
               Syntax(TypeTree.Arrow(lhs, rhs), lhs.span.extendedToCover(rhs.span))
