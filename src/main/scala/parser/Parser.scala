@@ -3,6 +3,7 @@ package yafl.parser
 import yafl.{Diagnostic, SourceFile, SourceSpan}
 import yafl.syntax.{Syntax, TermTree, TypeTree}
 import yafl.parser.Token.thickArrow
+import yafl.parser.Token.leftParenthesis
 
 object Parser:
 
@@ -97,6 +98,7 @@ object Parser:
       case Some(Token.identifier) => termIdentifier
       case Some(Token.leftParenthesis) => lambdaOrParenthesized
       case Some(Token.`if`) => conditional
+      case Some(Token.leftBracket) => typeAbstraction
       case _ => throw expected("term")
 
   /** Parses a Boolean literal. */
@@ -183,15 +185,15 @@ object Parser:
         .andDiscard(take(Token.thickArrow, "'=>'"))
         .and { (name) =>
           term.map { (body) =>
-            // Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), name.span.extendedToCover(body.span))
-            Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), bracket.span.extendedToCover(body.span))
+            val parameter = Syntax(TypeTree.Variable(name.text.toString), name.span)
+            Syntax(TermTree.TypeAbstraction(parameter, body), bracket.span.extendedToCover(body.span))
           }
         }
       }
 
   /** Parses an arrow type of the form T -> U */
   private def arrowType(using Context): Result[Syntax[TypeTree]] =
-    typ3.and { (lhs) =>
+    simpleType.and { (lhs) =>
       peek match
         case Some(Token.thinArrow) =>
           take(Token.thinArrow, "'->'").and { (_) =>
@@ -201,6 +203,14 @@ object Parser:
           }
         case _ =>
           result(lhs)
+    }
+
+  /** Parses a parenthesized type expression of the form (T -> U) -> V */
+  private def parenthesizedType(using Context): Result[Syntax[TypeTree]] =
+    take(Token.leftParenthesis, "'('").and { (leftParenthesis) =>
+      arrowType.andDiscard(take(Token.rightParenthesis, "')'")).map { (arrow) =>
+        arrow
+      }
     }
 
   /** The name of a parameter and its ascription. */
@@ -220,12 +230,14 @@ object Parser:
 
   /** Parses a type. */
   private def typ3(using Context): Result[Syntax[TypeTree]] =
-    simpleType
+    arrowType
+    // simpleType
 
   /** Parses a simple type. */
   private def simpleType(using Context): Result[Syntax[TypeTree]] =
     peek.map((t) => t.tag) match
       case Some(Token.identifier) => typeIdentifier
+      case Some(Token.leftParenthesis) => parenthesizedType
       case _ => throw expected("type")
 
   /** Parses a type identifier. */
