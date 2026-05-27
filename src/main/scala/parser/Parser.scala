@@ -2,6 +2,7 @@ package yafl.parser
 
 import yafl.{Diagnostic, SourceFile, SourceSpan}
 import yafl.syntax.{Syntax, TermTree, TypeTree}
+import yafl.parser.Token.thickArrow
 
 import scala.annotation.tailrec
 
@@ -161,7 +162,7 @@ object Parser:
       // thick arrow after the closing parenthesis.
       takeIf(Token.hasTag(Token.rightParenthesis)) match
         case Some(s) =>
-          // We've pased a closing parenthesis right after the opening one.
+          // We've parsed a closing parenthesis right after the opening one.
           s.map((end) => Syntax(TermTree.UnitLiteral, opener.span.extendedToCover(end.span)))
 
         case _ =>
@@ -207,6 +208,35 @@ object Parser:
         }
       }
     )}
+
+
+  /** Parses a type abstraction of the form [T] => e */
+  private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
+    take(Token.leftBracket, "'['").and { (bracket) =>
+      take(Token.identifier, "'identifier'")
+        .andDiscard(take(Token.rightBracket, "']'"))
+        .andDiscard(take(Token.thickArrow, "'=>'"))
+        .and { (name) =>
+          term.map { (body) =>
+            // Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), name.span.extendedToCover(body.span))
+            Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), bracket.span.extendedToCover(body.span))
+          }
+        }
+      }
+
+  /** Parses an arrow type of the form T -> U */
+  private def arrowType(using Context): Result[Syntax[TypeTree]] =
+    typ3.and { (lhs) =>
+      peek match
+        case Some(Token.thinArrow) =>
+          take(Token.thinArrow, "'->'").and { (_) =>
+            arrowType.map { (rhs) =>
+              Syntax(TypeTree.Arrow(lhs, rhs), lhs.span.extendedToCover(rhs.span))
+            }
+          }
+        case _ =>
+          result(lhs)
+    }
 
   /** The name of a parameter and its ascription. */
   private type Parameter = (Syntax[TermTree.Variable], Syntax[TypeTree])
