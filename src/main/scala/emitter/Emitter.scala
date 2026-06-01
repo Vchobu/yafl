@@ -48,14 +48,22 @@ object Emitter:
       case u =>
         throw Diagnostic(s"root term should have 'Int', found '${u}'", body.span)
 
-    emitAsValue(body).map { (code) =>
-      Rope(s"(func (export \"main\") (result ${output})") ++ code ++ ")"
+    val locals = bindingLocals(body)
+    val localDeclarations =
+      locals.foldLeft(Rope()) { (acc, p) =>
+        val (n, tpe) = p
+        acc ++ Rope(s" (local $$${n} ${tpe})")
+      }
+
+    emitAsValue(body, Map.empty).map { (code) =>
+      Rope(s"(func (export \"main\") (result ${output})") ++ localDeclarations ++ code ++ ")"
     }
   }
 
   /** Returns the code computing the value expressed by `tree`, which occurs as an argument or a
-    * return value. */
-  private def emitAsValue(tree: Syntax[TermTree])(using Context): Result[Rope] = {
+    * return value. `env` maps variable names to a stack of wasm-local identifiers (top is current).
+    */
+  private def emitAsValue(tree: Syntax[TermTree], env: Map[String, List[String]])(using Context): Result[Rope] = {
     tree.value match
       case TermTree.Variable(n) =>
         // Built-in symbols require special handling. Specifically, `#argc` must be emitted as a
@@ -64,7 +72,10 @@ object Emitter:
         n match
           case "#argc" => result(Rope(s"(call $$#argc)"))
           case "#argv" => ???
-          case _ => result(Rope(s"(local.get $$${n})"))
+          case _ =>
+            env.get(n) match
+              case Some(ns) if ns.nonEmpty => result(Rope(s"(local.get $$${ns.head})"))
+              case _ => result(Rope(s"(local.get $$${n})"))
 
       case TermTree.IntegerLiteral(n) =>
         result(Rope(s"(i32.const ${n})"))
@@ -72,18 +83,12 @@ object Emitter:
       case TermTree.BooleanLiteral(n) =>
         result(Rope(s"(i32.const ${if n then 1 else 0})"))
 
-      /**
-        * WASM code
-          (if (result i32)
-            (then i32.const 1)
-            (else i32.const 2))
-        */
       case TermTree.Conditional(condition, success, failure) =>
-        emitAsValue(condition).and { c =>
-          emitAsValue(success).and { s =>
-            emitAsValue(failure).map { f =>
+        emitAsValue(condition, env).and { c =>
+          emitAsValue(success, env).and { s =>
+            emitAsValue(failure, env).map { f =>
               val code =
-                c ++ Rope("(if (result i32) (then ") ++
+                c ++ Rope(" (if (result i32) (then ") ++
                   s ++ Rope(") (else ") ++
                   f ++ Rope("))")
               code
@@ -91,17 +96,41 @@ object Emitter:
           }
         }
 
+      case TermTree.Binding(name, initializer, body) =>
+        val unique = s"${name.value.name}_${name.span.start}"
+        emitAsValue(initializer, env).and { init =>
+          // set the unique local to initializer
+          val setCode = init ++ Rope(s"(local.set $$${unique})")
+          // extend env for body: push unique onto the name stack
+          val pushed = env.updated(name.value.name, unique :: env.getOrElse(name.value.name, Nil))
+          emitAsValue(body, pushed).map { b =>
+            setCode ++ b
+          }
+        }
+
       case TermTree.TermApplication(callee, a) => callee.value match
         case TermTree.TermApplication(InfixOperator(f), b) =>
-          emitAsValue(b).and((lhs) => emitAsValue(a).map { (rhs) =>
+          emitAsValue(b, env).and((lhs) => emitAsValue(a, env).map { (rhs) =>
             val operation = f match
               case InfixOperator.Add => "(i32.add)"
               case InfixOperator.Sub => "(i32.sub)"
+              case InfixOperator.Mul => "(i32.mul)"
+              case InfixOperator.Div => "(i32.div_s)"
+
+              case InfixOperator.Eq  => "(i32.eq)"
+              case InfixOperator.Neq => "(i32.ne)"
+              case InfixOperator.Lt  => "(i32.lt_s)"
+              case InfixOperator.Le  => "(i32.le_s)"
+              case InfixOperator.Gt  => "(i32.gt_s)"
+              case InfixOperator.Ge  => "(i32.ge_s)"
+
+              case InfixOperator.And => "(i32.and)"
+              case InfixOperator.Or  => "(i32.or)"
             lhs ++ rhs ++ operation
           })
 
         case _ =>
-          emitAsCallee(callee).and((f) => emitAsValue(a).map((x) => x ++ f))
+          emitAsCallee(callee, env).and((f) => emitAsValue(a, env).map((x) => x ++ f))
 
       case _ =>
         throw Diagnostic("unsupported term", tree.span)
@@ -113,7 +142,7 @@ object Emitter:
     * The result has the form `(call f)` where `f` is a local function or `(call_indirect t i)`
     * where `t` is a type and `i` is the index in the function table.
     */
-  private def emitAsCallee(tree: Syntax[TermTree])(using Context): Result[Rope] = {
+  private def emitAsCallee(tree: Syntax[TermTree], env: Map[String, List[String]])(using Context): Result[Rope] = {
     tree.value match
       case TermTree.Variable("#argv") =>
         result(Rope(s"(call $$#argv)"))
@@ -124,6 +153,39 @@ object Emitter:
   /** Returns the current context. */
   private def context(using ctx: Context): Context =
     ctx
+
+  /** Returns the local declarations required by let bindings. */
+  private def bindingLocals(tree: Syntax[TermTree])(using Context): Vector[(String, String)] =
+    def loop(t: Syntax[TermTree]): Vector[(String, String)] =
+      t.value match
+        case TermTree.Binding(name, initializer, body) =>
+          val wasmType = context.types.get(initializer) match
+            case Some(Type.Ground.Bool) | Some(Type.Ground.Int) => "i32"
+            case Some(other) => throw Diagnostic(s"unsupported binding type '${other}'", initializer.span)
+            case None => "i32"
+          val internal = s"${name.value.name}_${name.span.start}"
+          Vector((internal, wasmType)) ++ loop(initializer) ++ loop(body)
+        case TermTree.TermApplication(f, x) =>
+          loop(f) ++ loop(x)
+        case TermTree.TermAbstraction(_, _, body) =>
+          loop(body)
+        case TermTree.TypeAbstraction(_, body) =>
+          loop(body)
+        case TermTree.Conditional(condition, success, failure) =>
+          loop(condition) ++ loop(success) ++ loop(failure)
+        case TermTree.RecursiveAbstraction(_, _, definition) =>
+          loop(definition)
+        case _ =>
+          Vector.empty
+
+    // Keep one declaration per name to avoid duplicate local declarations.
+    val (seen, declarations) = loop(tree).foldLeft((Set.empty[String], Vector.empty[(String, String)])) {
+      case ((s, ds), (name, tpe)) if s.contains(name) =>
+        (s, ds)
+      case ((s, ds), p @ (name, _)) =>
+        (s + name, ds :+ p)
+    }
+    declarations
 
   /** Returns a result wrapping `value` together with the current context. */
   private def result[T](value: T)(using Context): Result[T] =

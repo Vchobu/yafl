@@ -97,6 +97,7 @@ object Parser:
       case Some(Token.identifier) => termIdentifier
       case Some(Token.leftParenthesis) => lambdaOrParenthesized
       case Some(Token.`if`) => conditional
+      case Some(Token.let) => binding
       case _ => throw expected("term")
 
   /** Parses a Boolean literal. */
@@ -164,8 +165,9 @@ object Parser:
           term.and { ((success) =>
             take(Token.`else`, "'else'").and { (_) =>
               term.and { ((failure) =>
+                val termTree = TermTree.Conditional(condition, success, failure)
                 result(
-                  Syntax(TermTree.Conditional(condition, success, failure), opener.span.extendedToCover(failure.span))
+                  Syntax(termTree, opener.span.extendedToCover(failure.span))
                 )
               )}
             }
@@ -173,6 +175,22 @@ object Parser:
         }
       }
     )}
+
+
+  /** Parses a binding. */
+  private def binding(using Context): Result[Syntax[TermTree.Binding]] =
+    take(Token.let, "'let'").and { (opener) =>
+      termIdentifier.andDiscard(take(Token.equal, "'='")).and { (name) =>
+        term.and { (initializer) =>
+          take(Token.semicolon, "';'").and { (_) =>
+            term.map { (body) =>
+              val termTree = TermTree.Binding(name, initializer, body)
+              Syntax(termTree, opener.span.extendedToCover(body.span))
+            }
+          }
+        }
+      }
+    }
 
 
   /** Parses a type abstraction of the form [T] => e */
