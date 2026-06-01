@@ -3,6 +3,9 @@ package yafl.parser
 import yafl.{Diagnostic, SourceFile, SourceSpan}
 import yafl.syntax.{Syntax, TermTree, TypeTree}
 import yafl.parser.Token.thickArrow
+import yafl.parser.Token.leftParenthesis
+
+import scala.annotation.tailrec
 
 object Parser:
 
@@ -85,9 +88,42 @@ object Parser:
   private def prefixTerm(using Context): Result[Syntax[TermTree]] =
     typeApplication
 
-  /** Parses a simple term or a type application. */
+  /** ************************************************************************************** */
+
+  /** Parses a simple term or a type application. e.g. f [A] [B] */
   private def typeApplication(using Context): Result[Syntax[TermTree]] =
-    simpleTerm
+    @tailrec
+    // boucle récursive : empile les [T] sur l'accumulateur (acc)
+    def loop(acc: Syntax[TermTree])(using Context): Result[Syntax[TermTree]] =
+      //takeIf(predicate: Token => Boolean)(using Context) = chercher [
+      // et retourne un Option[Result[Token]] e.g. some(x)
+      takeIf(Token.hasTag(Token.leftBracket)) match
+        // Some(x) : un '[' a été consommé ; x.state = position juste après le [
+        case Some(x) =>
+          // le '[' a déjà été consommé par takeIf ; on lit le type à partir de x.state
+          val argument = typ3(using x.state) // parse (lit) le type à partir de après la position [
+          // take(k: Token.Tag, s: String)(using Context)
+          // si nextToken is tag ] -->consomme ] et retourn Result[Token] (le token + l'état avancé après lui)
+          // garder pour la position
+          val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
+          // on span entre début de l'acc à ]
+          val span = acc.span.extendedToCover(closed.value.span)
+          // on fait le syntax tree
+          // TypeApplication(acc, type) + sa position source
+          // syntax = TermTree + span (2 positions dans le source file)
+          // TypeApplication != typeApplicsation
+          val node = Syntax(TermTree.TypeApplication(acc, argument.value), span)
+          loop(node)(using closed.state) // recommence pour un [ suivant
+        // pas de [ = on s'arrête et on retourne l'accumulateur
+        case _ =>
+          result(acc)
+    // lit un terme simple
+    val base = simpleTerm // f [A] [B] avec base.value = f et base.state = après f
+    // base.value = arbre syntaxique du simpleTerm
+    // base.state = position du curseur après le simpleTerm
+    loop(base.value)(using base.state) // démarre avec f --> on cherche le prochain [ --> [A] [B]
+
+  /** ************************************************************************************** */
 
   /** Parses a simple term. */
   private def simpleTerm(using Context): Result[Syntax[TermTree]] =
@@ -98,6 +134,7 @@ object Parser:
       case Some(Token.leftParenthesis) => lambdaOrParenthesized
       case Some(Token.`if`) => conditional
       case Some(Token.let) => binding
+      case Some(Token.leftBracket) => typeAbstraction
       case _ => throw expected("term")
 
   /** Parses a Boolean literal. */
@@ -201,17 +238,18 @@ object Parser:
         .andDiscard(take(Token.thickArrow, "'=>'"))
         .and { (name) =>
           term.map { (body) =>
-            // Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), name.span.extendedToCover(body.span))
-            Syntax(TermTree.TypeAbstraction(Syntax(TypeTree.Variable(name.text.toString), name.span), body), bracket.span.extendedToCover(body.span))
+            val parameter = Syntax(TypeTree.Variable(name.text.toString), name.span)
+            Syntax(TermTree.TypeAbstraction(parameter, body), bracket.span.extendedToCover(body.span))
           }
         }
       }
 
   /** Parses an arrow type of the form T -> U */
   private def arrowType(using Context): Result[Syntax[TypeTree]] =
-    typ3.and { (lhs) =>
+    simpleType.and { (lhs) =>
       peek match
-        case Some(Token.thinArrow) =>
+        case Some(t) if t.tag == Token.thinArrow =>
+        // case Some(Token.thinArrow) =>
           take(Token.thinArrow, "'->'").and { (_) =>
             arrowType.map { (rhs) =>
               Syntax(TypeTree.Arrow(lhs, rhs), lhs.span.extendedToCover(rhs.span))
@@ -219,6 +257,14 @@ object Parser:
           }
         case _ =>
           result(lhs)
+    }
+
+  /** Parses a parenthesized type expression of the form (T -> U) -> V */
+  private def parenthesizedType(using Context): Result[Syntax[TypeTree]] =
+    take(Token.leftParenthesis, "'('").and { (leftParenthesis) =>
+      arrowType.andDiscard(take(Token.rightParenthesis, "')'")).map { (arrow) =>
+        arrow
+      }
     }
 
   /** The name of a parameter and its ascription. */
@@ -238,12 +284,14 @@ object Parser:
 
   /** Parses a type. */
   private def typ3(using Context): Result[Syntax[TypeTree]] =
-    simpleType
+    arrowType
+    // simpleType
 
   /** Parses a simple type. */
   private def simpleType(using Context): Result[Syntax[TypeTree]] =
     peek.map((t) => t.tag) match
       case Some(Token.identifier) => typeIdentifier
+      case Some(Token.leftParenthesis) => parenthesizedType
       case _ => throw expected("type")
 
   /** Parses a type identifier. */

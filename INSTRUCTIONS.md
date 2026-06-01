@@ -106,7 +106,7 @@ All tasks have an associated test that you can use to exercise your implementati
   Consequently, it is straightforward for the parser to recognize the start of a construction.
   You can take inspiration from the part of the parser that is handling the expression of a lambda to write your code.
 
-- [ ] **Type abstractions** (required) **Raphael**
+- [x] **Type abstractions** (required) **Raphael**
 
   Type abstractions have the form `[T] => e`.
   Similarly to conditionals and bindings, they also start with a token (i.e., `[`) that cannot occur at the beginning of any other construction.
@@ -128,14 +128,14 @@ All tasks have an associated test that you can use to exercise your implementati
 
   Like for type abstractions, although the grammar specifies that a universal type may be introduced with more than one type variable, you can implement this step assuming that there is exactly one.
 
-- [ ] **Arrow types** (required) **Raphael**
+- [x] **Arrow types** (required) **Raphael**
 
   Arrow types have the form `T -> U`.
   Consequently, unlike the constructions mentioned above, the parser cannot simply use a single token to recognize the start of an arrow.
   However, notice that the occurrence of an arrow operator (i.e., `->`) following a type expression signals the presence of an arrow.
   Further, since the operator is right-associative, the parser can simply recurse to recognize the type expression on the right-hand side.
 
-- [ ] **Parenthesized types** (required) **Raphael**
+- [x] **Parenthesized types** (required) **Raphael**
 
   Just like term expressions, type expressions can be written in parentheses to override default precedence or simply to improve legibility.
   For example, the type expression `T -> U -> V` does not denote the same type as `(T -> U) -> V`.
@@ -158,7 +158,7 @@ All tasks have an associated test that you can use to exercise your implementati
   In other words, these tests will fail unless your parser can properly recognize a term expression of the form `T -> U`.
   You can still write your own tests using simpler types, though.
 
-- [ ] **Multiple parameters and arguments** (optional)
+- [ ] **Multiple parameters and arguments** (optional) **Raphael**
 
   According to the grammar, several production rules can recognize comma-separated sequences of certain constructions.
   For example, a term abstraction can be written with more than one parameter (e.g., `(x : Int, y: Int) => x + y`).
@@ -228,7 +228,7 @@ Further, all tests rely on the parser behaving correctly.
   For example, `(z : Int) => let x = z : x + x` is already in normal form because moving the binding outside of the term abstraction would leave `z` unbound.
 
 
-- [ ] **Dead code elimination** (optional)
+- [ ] **Dead code elimination** (optional) **Gaetan**
 
   [Dead code elimination](https://en.wikipedia.org/wiki/Dead-code_elimination) consists of removing unreachable code from the program.
   For example, both `if true then 1 else 2 * 3` and `let x = 2 ; a` can be rewritten `1`.
@@ -236,7 +236,7 @@ Further, all tests rely on the parser behaving correctly.
   For this task, your goal is to eliminate conditionals whose condition is provably `true` or `false` as well as bindings that have no use.
   The examples above illustrate.
 
-- [ ] **Constant propagation** (optional)
+- [ ] **Constant propagation** (optional) **Vadym**
 
   Constant propagation consists of replacing variables denoting a constant by their values.
   For example, `let x = 2 ; x + y` can be rewritten `2 + y`.
@@ -283,7 +283,7 @@ These can be implemented in any order, although it is recommended to start with 
 Note that all available tests rely on the parser behaving correctly.
 Most tests can only pass if you have also implemented part of the optimizer or if your compiler can handle closures.
 
-- [ ] **Built-in arithmetic and comparison** (optional)
+- [ ] **Built-in arithmetic and comparison** (optional) **Raphael**
 
   The current implementation can only handle two built-in operations, namely addition and subtraction.
   For this task, your goal is to support the rest.
@@ -386,4 +386,4 @@ Follow these instructions to submit your work:
    - the names of the persons who worked on the task
    - references to the relevant part of your implementation
 
-3. Submit this report on [isc.hevs.ch/learn](https://isc.hevs.ch/learn/) no later than Tuesday, 26th May 23:59 (CEST).
+3. Submit this report on [isc.hevs.ch/learn](https://isc.hevs.ch/learn/) no later than Tuesday, 9th June 23:59 (CEST).
