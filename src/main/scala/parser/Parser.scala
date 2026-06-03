@@ -84,13 +84,16 @@ object Parser:
     prefixTerm.and(loop)
   }
 
+
+  /** ************************************************************************************** */
+
+  /** Parses a simple term or a type application. e.g. f [A] [B]
+   *  I used LLM and Mrs. Raccordon to understand */
+
   /** Parses a simple term of the application of a prefix operator. */
   private def prefixTerm(using Context): Result[Syntax[TermTree]] =
     typeApplication
 
-  /** ************************************************************************************** */
-
-  /** Parses a simple term or a type application. e.g. f [A] [B] */
   private def typeApplication(using Context): Result[Syntax[TermTree]] =
     @tailrec
     // boucle récursive : empile les [T] sur l'accumulateur (acc)
@@ -123,6 +126,26 @@ object Parser:
     // base.state = position du curseur après le simpleTerm
     loop(base.value)(using base.state) // démarre avec f --> on cherche le prochain [ --> [A] [B]
 
+  /**  keyword 'fix'
+   *   using typ3
+   *   e.g. fix loop : Int -> Int = (n : Int) => n
+   *
+   * */
+
+  private def recursiveAbstraction(using Context): Result[Syntax[TermTree]] = {
+    // consomme le mot-clé 'fix'    opener = le token 'fix' qui marque le début du span / puis met dans opener
+    take(Token.fix, "'fix'").and { (opener) =>
+      // puis on lit l'identifiant (e.g. loop) puis consomme le : et le jette / puis met dans name
+      termIdentifier.andDiscard(take(Token.colon, "':'")).and { (name) =>
+        // puis on lit le typ3 (gère arrowType) qui parse le type e.g. 'Int -> Int', on consomme '=' et jette / puis met dans
+        typ3.andDiscard(take(Token.equal, "'='")).and { (typeA) =>
+          //
+          ???
+          }
+        }
+      }
+    }
+
   /** ************************************************************************************** */
 
   /** Parses a simple term. */
@@ -134,6 +157,7 @@ object Parser:
       case Some(Token.leftParenthesis) => lambdaOrParenthesized
       case Some(Token.`if`) => conditional
       case Some(Token.let) => binding
+      case Some(Token.fix) => recursiveAbstraction
       case Some(Token.leftBracket) => typeAbstraction
       case _ => throw expected("term")
 
