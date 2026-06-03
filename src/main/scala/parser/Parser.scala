@@ -137,14 +137,18 @@ object Parser:
     take(Token.fix, "'fix'").and { (opener) =>
       // puis on lit l'identifiant (e.g. loop) puis consomme le : et le jette / puis met dans name
       termIdentifier.andDiscard(take(Token.colon, "':'")).and { (name) =>
-        // puis on lit le typ3 (gère arrowType) qui parse le type e.g. 'Int -> Int', on consomme '=' et jette / puis met dans
+        // puis on lit le typ3 (gère arrowType) qui parse le type e.g. 'Int -> Int', on consomme '=' et jette / puis met dans typeA
         typ3.andDiscard(take(Token.equal, "'='")).and { (typeA) =>
-          //
-          ???
+          // parser le body (avec term)
+          term.map { (body) =>
+            // assembler name + typeA + body en un node, et span
+            val termTree = TermTree.RecursiveAbstraction(name, typeA, body)
+            Syntax(termTree, opener.span.extendedToCover(body.span))
           }
         }
       }
     }
+  }
 
   /** ************************************************************************************** */
 
