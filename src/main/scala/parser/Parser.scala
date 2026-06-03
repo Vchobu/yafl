@@ -214,11 +214,14 @@ object Parser:
 
   /** Parses a type abstraction of the form [T] => e */
   private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
+    // Take the first bracket
     take(Token.leftBracket, "'['").and { (bracket) =>
+      // Take the type identifier, discard the unnecessary right bracket and the arrow
       take(Token.identifier, "'identifier'")
         .andDiscard(take(Token.rightBracket, "']'"))
         .andDiscard(take(Token.thickArrow, "'=>'"))
         .and { (name) =>
+          // ...and then map the identifier (name) and the body (e)
           term.map { (body) =>
             val parameter = Syntax(TypeTree.Variable(name.text.toString), name.span)
             Syntax(TermTree.TypeAbstraction(parameter, body), bracket.span.extendedToCover(body.span))
@@ -228,10 +231,11 @@ object Parser:
 
   /** Parses an arrow type of the form T -> U */
   private def arrowType(using Context): Result[Syntax[TypeTree]] =
+    // Check for a simple type
     simpleType.and { (lhs) =>
       peek match
+        // If the next token is a thin arrow, map both side of the arrowType (T and U)
         case Some(t) if t.tag == Token.thinArrow =>
-        // case Some(Token.thinArrow) =>
           take(Token.thinArrow, "'->'").and { (_) =>
             arrowType.map { (rhs) =>
               Syntax(TypeTree.Arrow(lhs, rhs), lhs.span.extendedToCover(rhs.span))
@@ -243,7 +247,9 @@ object Parser:
 
   /** Parses a parenthesized type expression of the form (T -> U) -> V */
   private def parenthesizedType(using Context): Result[Syntax[TypeTree]] =
+    // Check for a left parenthesis
     take(Token.leftParenthesis, "'('").and { (leftParenthesis) =>
+      // Parse the arrowType in the middle and get rid of the right parenthesis
       arrowType.andDiscard(take(Token.rightParenthesis, "')'")).map { (arrow) =>
         arrow
       }
