@@ -6,6 +6,7 @@ import yafl.parser.Token.thickArrow
 import yafl.parser.Token.leftParenthesis
 
 import scala.annotation.tailrec
+import scala.caps.use
 
 object Parser:
 
@@ -105,15 +106,36 @@ object Parser:
           // take(k: Token.Tag, s: String)(using Context)
           // si nextToken is tag ] -->consomme ] et retourn Result[Token] (le token + l'état avancé après lui)
           // garder pour la position
-          val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
-          // on span entre début de l'acc à ]
-          val span = acc.span.extendedToCover(closed.value.span)
-          // on fait le syntax tree
-          // TypeApplication(acc, type) + sa position source
-          // syntax = TermTree + span (2 positions dans le source file)
-          // TypeApplication != typeApplicsation
-          val node = Syntax(TermTree.TypeApplication(acc, argument.value), span)
-          loop(node)(using closed.state) // recommence pour un [ suivant
+          /** **** Multiple type arguments **** */
+          takeIf(Token.hasTag(Token.comma))(using argument.state) match
+            // If next token is a comma, build a node and enter the commaLoop
+            case Some(comma) => 
+
+              def commaLoop(commaAcc: Syntax[TermTree])(using Context): Result[Syntax[TermTree]] =
+                val res = typ3 // Get the type after the comma
+                takeIf(Token.hasTag(Token.comma)) match
+                  case Some(comma) =>
+                    val node = Syntax(TermTree.TypeApplication(commaAcc, res.value), commaAcc.span.extendedToCover(comma.value.span))
+                    commaLoop(node)(using res.state)
+                  case None =>
+                    val closed = take(Token.rightBracket, "']'")(using res.state) // consume the right bracket after the type
+                    // If next token is a right bracket, build the node and loop again
+                    val node = Syntax(TermTree.TypeApplication(commaAcc, res.value), commaAcc.span.extendedToCover(closed.value.span))
+                    loop(node)(using closed.state)
+
+              val node = Syntax(TermTree.TypeApplication(acc, argument.value), acc.span.extendedToCover(comma.value.span))
+              commaLoop(node)(using comma.state)
+            case None =>
+            /** **** Multiple type arguments **** */
+              val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
+              // on span entre début de l'acc à ]
+              val span = acc.span.extendedToCover(closed.value.span)
+              // on fait le syntax tree
+              // TypeApplication(acc, type) + sa position source
+              // syntax = TermTree + span (2 positions dans le source file)
+              // TypeApplication != typeApplicsation
+              val node = Syntax(TermTree.TypeApplication(acc, argument.value), span)
+              loop(node)(using closed.state) // recommence pour un [ suivant
         // pas de [ = on s'arrête et on retourne l'accumulateur
         case _ =>
           result(acc)
@@ -213,7 +235,6 @@ object Parser:
       }
     )}
 
-
   /** Parses a binding. */
   private def binding(using Context): Result[Syntax[TermTree.Binding]] =
     take(Token.let, "'let'").and { (opener) =>
@@ -228,7 +249,6 @@ object Parser:
         }
       }
     }
-
 
   /** Parses a type abstraction of the form [T] => e */
   private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
