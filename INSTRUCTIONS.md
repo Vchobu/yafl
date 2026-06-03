@@ -99,7 +99,7 @@ All tasks have an associated test that you can use to exercise your implementati
 > Since other methods are private, there is no direct means to test the parsing of a type expression.
 > One simple way to work around this issue is to parse a term involving a type expression, such as a type application or a type abstraction.
 
-- [ ] **Conditionals and Bindings** (required) **Vadym**
+- [x] **Conditionals and Bindings** (required) **Vadym**
 
   Conditionals and bindings are simple terms that are relatively easy to parse.
   Each construction is introduced with its own dedicated keyword (i.e., `if` and `let`, respectively) and has a fixed structure.
@@ -288,7 +288,7 @@ Most tests can only pass if you have also implemented part of the optimizer or i
   The current implementation can only handle two built-in operations, namely addition and subtraction.
   For this task, your goal is to support the rest.
 
-- [ ] **Bindings** (optional)
+- [x] **Bindings** (optional) **Vadym**
 
   The current implementation does not handle local bindings, which can be implemented using local variables in WebAssembly.
   For example, the expression `let x = 2 ; x + x` can be compiled to the following:
