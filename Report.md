@@ -14,6 +14,15 @@
     - src/main/parser/Parser.scala - function starts from the line 166
 
  # Raphael
+ ### Assigned tasks:
+ - **Type abstractions** (required)
+    - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
+ - **Arrow types** (required)
+   - src/main/parser/Parser.scala - function arrowType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L375)
+ - **Parenthesized types** (required)
+    - src/main/parser/Parser.scala - function parenthesizedType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L391)
+ - **Multiple parameters and arguments** (optional)
+   - src/main/parser/Parser.scala - function 
 
  # Vadym
 
@@ -29,7 +38,7 @@
 
  ## LLM usage
 
-In this work Claude was used as an auxiliary tool. The model was used to explore alternative schema designs and compare trade-offs, clarify behavior and requirements, validate that there is no hidded unexpected behaviour and assist with wording when writing comments for the code.
+In this work Claude was used as an auxiliary tool. The model was used to explore alternative schema designs and compare trade-offs, clarify behavior and requirements, validate that there is no hidden unexpected behaviour and assist with wording when writing comments for the code.
 
 All final architectural decisions, schema design, and implementation were produced and validated manually.
 

@@ -292,53 +292,6 @@ object Parser:
       }
     }
 
-  /** Parses a type abstraction of the form [T] => e */
-  // private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
-  //   // Take the first bracket
-  //   take(Token.leftBracket, "'['").and { (bracket) =>
-  //     // Take the type identifier, discard the unnecessary right bracket and the arrow
-  //     take(Token.identifier, "'identifier'")
-  //       .andDiscard(take(Token.rightBracket, "']'"))
-  //       .andDiscard(take(Token.thickArrow, "'=>'"))
-  //       .and { (name) =>
-  //         // ...and then map the identifier (name) and the body (e)
-  //         term.map { (body) =>
-  //           val parameter = Syntax(TypeTree.Variable(name.text.toString), name.span)
-  //           Syntax(TermTree.TypeAbstraction(parameter, body), bracket.span.extendedToCover(body.span))
-  //         }
-  //       }
-  //     }
-
-  /** Parses a type abstraction of the form [T] => e, and [A, B, C] => e (RGO version)*/
-  private def typeAbstractionRG(using Context): Result[Syntax[TermTree]] =
-    def loop(ps: List[Syntax[TypeTree.Variable]])(using Context): Result[List[Syntax[TypeTree.Variable]]] = {
-      takeIf(Token.hasTag(Token.comma)) match
-        case Some(separator) =>
-          val res = take(Token.identifier, "'identifier'")(using separator.state)
-          val node = Syntax(TypeTree.Variable(res.value.text.toString), res.value.span)
-          loop(node :: ps)(using res.state)
-        case None =>
-          result(ps)
-    }
-    
-    // Take the first bracket
-    take(Token.leftBracket, "'['").and { (bracket) => 
-      // Take the type identifier, discard the unnecessary right bracket and the arrow
-      take(Token.identifier, "'identifier'").and { (identifier) =>
-        val firstIdentifier = Syntax(TypeTree.Variable(identifier.text.toString), identifier.span)
-        loop(List(firstIdentifier))
-          .andDiscard(take(Token.rightBracket, "']'"))
-          .andDiscard(take(Token.thickArrow, "'=>'"))
-          .and { (ps) =>
-            // ...and then map the identifier (name) and the body (e)
-            term.map { (body) =>
-              ps.foldLeft(body) { (b, p) =>
-                Syntax(TermTree.TypeAbstraction(p, b), p.span.extendedToCover(b.span))
-              }
-            }
-          }
-      }
-    }
   /** Parses a type abstraction of the form [T] => e (VCH version)*/
   private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
     take(Token.leftBracket, "'['").and { (bracket) =>
