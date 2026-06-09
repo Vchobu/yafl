@@ -380,7 +380,7 @@ Most tests can only pass if you have also implemented part of the optimizer or i
 
 Follow these instructions to submit your work:
 
-1. Create a tag of your repository.
+1. Create a tag of your repository. (git tag final)
 2. Write a small report with a link to this tag and, for each task you have completed:
 
    - the names of the persons who worked on the task
