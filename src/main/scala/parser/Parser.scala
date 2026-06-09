@@ -85,7 +85,7 @@ object Parser:
     prefixTerm.and(loop)
   }
 
-
+  /* ******************************************************************** */
   /** Parses a simple term or a type application. e.g. f [A] [B]
    *  I used LLM and Mrs. Raccordon to understand */
 
@@ -103,7 +103,7 @@ object Parser:
         typeApplication
 
   private def typeApplication(using Context): Result[Syntax[TermTree]] =
-    @tailrec
+//    @tailrec
     // boucle récursive : empile les [T] sur l'accumulateur (acc)
     def loop(acc: Syntax[TermTree])(using Context): Result[Syntax[TermTree]] =
       //takeIf(predicate: Token => Boolean)(using Context) = chercher [
@@ -165,7 +165,7 @@ object Parser:
       }
     }
   }
-
+  /* ******************************************************************** */
 
   /** Parses a simple term. */
   private def simpleTerm(using Context): Result[Syntax[TermTree]] =
