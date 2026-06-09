@@ -1,52 +1,51 @@
- # Yafl - Yet Another Functional Language
+# Yafl - Yet Another Functional Language
 
- ## Team: Rey Gaetan, Gonin Raphael, Chobu Vadym
+## Team: Rey Gaetan, Gonin Raphael, Chobu Vadym
 
- # Gaetan
+# Gaetan
 
- ### Assigned tasks:
+### Assigned tasks:
 
- - **Type applications** (required)
-    - src/main/parser/Parser.scala - function [starts from the line 107](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L107)
- - **Bindings** (optional) _Vadym & Gaetan_
-    - Bindings (both required and optional): src/main/parser/Parser.scala - function [starts from the line 281](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L281); src/main/emitter/Emitter.scala - [starts from the line 99](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/emitter/Emitter.scala#L99) and [from the line 158](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/emitter/Emitter.scala#L158)
- - **Recursive abstractions** (required)
-    - src/main/parser/Parser.scala - function [starts from the line 166](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L166)
-
- # Raphael
-
- ### Assigned tasks:
- - **Type abstractions** (required)
-    - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
- - **Arrow types** (required)
-   - src/main/parser/Parser.scala - function arrowType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L375)
- - **Parenthesized types** (required)
-    - src/main/parser/Parser.scala - function parenthesizedType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L391)
- - **Multiple parameters and arguments** (optional)
-   - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
-- **Built-in arithmetic and comparison** (optional)
-   - src/main/optimizer/Optimizer.scala - in function constantFold, [starting from here](https://github.com/Vchobu/yafl/blob/a21a4611b0f1d5ef669c6db50bf3ecce14f77c4c/src/main/scala/optimizer/Optimizer.scala#L48)
-   - src\test\scala\Optimizer.scalatests [starting from here](https://github.com/Vchobu/yafl/blob/a21a4611b0f1d5ef669c6db50bf3ecce14f77c4c/src/test/scala/Optimizer.scala#L14)
-
-
- # Vadym
-
- ### Assigned tasks: 
-- **Conditionals and Bindings** (required)
-    - Conditionals: src/main/parser/Parser.scala - function [starts from the line 262](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L262); src/main/emitter/Emitter.scala - [starts from the line 86](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/emitter/Emitter.scala#L86)
+- **Type applications** (required)
+    - src/main/scala/parser/Parser.scala - function [starts at line 105](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L105)
 - **Bindings** (optional) _Vadym & Gaetan_
-    - Bindings (both required and optional): src/main/parser/Parser.scala - function [starts from the line 281](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L281); src/main/emitter/Emitter.scala - [starts from the line 99](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/emitter/Emitter.scala#L99) and [from the line 158](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/emitter/Emitter.scala#L158)
+    - src/main/scala/parser/Parser.scala - function [starts at line 265](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L265); src/main/scala/emitter/Emitter.scala - [line 66](https://github.com/Vchobu/yafl/blob/final/src/main/scala/emitter/Emitter.scala#L66) and [line 158](https://github.com/Vchobu/yafl/blob/final/src/main/scala/emitter/Emitter.scala#L158)
+- **Recursive abstractions** (required)
+    - src/main/scala/parser/Parser.scala - function [starts at line 151](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L151)
+
+# Raphael
+
+### Assigned tasks:
+- **Type abstractions** (required)
+    - src/main/scala/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L280)
+- **Arrow types** (required)
+    - src/main/scala/parser/Parser.scala - function arrowType [starts here](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L312)
+- **Parenthesized types** (required)
+    - src/main/scala/parser/Parser.scala - function parenthesizedType [starts here](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L328)
+- **Multiple parameters and arguments** (optional)
+    - src/main/scala/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L280)
+- **Built-in arithmetic and comparison** (optional)
+    - src/main/scala/optimizer/Optimizer.scala - in function constantFold, [starting here](https://github.com/Vchobu/yafl/blob/final/src/main/scala/optimizer/Optimizer.scala#L41)
+    - src/test/scala/Optimizer.scala - tests [starting here](https://github.com/Vchobu/yafl/blob/final/src/test/scala/Optimizer.scala#L14)
+
+Note: some tasks point to the same code, because the same function was improved to handle different features.
+
+# Vadym
+
+### Assigned tasks:
+- **Conditionals and Bindings** (required)
+    - Conditionals: src/main/scala/parser/Parser.scala - function [starts at line 246](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L246); src/main/scala/emitter/Emitter.scala - [line 66](https://github.com/Vchobu/yafl/blob/final/src/main/scala/emitter/Emitter.scala#L66)
+- **Bindings** (optional) _Vadym & Gaetan_
+    - src/main/scala/parser/Parser.scala - function [starts at line 265](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L265); src/main/scala/emitter/Emitter.scala - [line 66](https://github.com/Vchobu/yafl/blob/final/src/main/scala/emitter/Emitter.scala#L66) and [line 158](https://github.com/Vchobu/yafl/blob/final/src/main/scala/emitter/Emitter.scala#L158)
 - **Prefix terms** (required)
-    - src/main/parser/Parser.scala - function [starts from the line 220](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L220)
+    - src/main/scala/parser/Parser.scala - function [starts at line 93](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L93)
 - **Universal types (aka _forall_)** (required)
-    - src/main/parser/Parser.scala - function [starts from the line 355](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L354)
+    - src/main/scala/parser/Parser.scala - function [starts at line 338](https://github.com/Vchobu/yafl/blob/final/src/main/scala/parser/Parser.scala#L338)
 
-Note: some tasks point to the same code, because the same function was improved to handle different functions.
-
- ## LLM usage
+## LLM usage
 
 In this work Claude was used as an auxiliary tool. The model was used to explore alternative schema designs and compare trade-offs, clarify behavior and requirements, validate that there is no hidden unexpected behaviour and assist with wording when writing comments for the code.
 
 All final architectural decisions, schema design, and implementation were produced and validated manually.
 
-The following tests: conditional 2 and 3; bindings 3 to 9 in src/test/Emitter.scala were generated by the LLM.
+The following tests: conditional 2 and 3; bindings 3 to 9 in src/test/scala/Emitter.scala were generated by the LLM.
