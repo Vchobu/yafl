@@ -93,7 +93,16 @@ object Parser:
 
   /** Parses a simple term of the application of a prefix operator. */
   private def prefixTerm(using Context): Result[Syntax[TermTree]] =
-    typeApplication
+    peek match
+      case Some(t) if t.tag == Token.operator =>
+        prefixOperator.and { (f) =>
+          prefixTerm.map { (arg) =>
+            val s = f.span.extendedToCover(arg.span)
+            Syntax(TermTree.TermApplication(f, arg), s)
+          }
+        }
+      case _ =>
+        typeApplication
 
   private def typeApplication(using Context): Result[Syntax[TermTree]] =
     @tailrec
@@ -207,6 +216,11 @@ object Parser:
     take(Token.operator, "operator")
       .map((n) => Syntax(TermTree.Variable(s"infix${n.text}"), n.span))
 
+  /** Parses a prefix operator. */
+  private def prefixOperator(using Context): Result[Syntax[TermTree.Variable]] =
+    take(Token.operator, "operator")
+      .map((n) => Syntax(TermTree.Variable(s"prefix${n.text}"), n.span))
+
   /** Parses a lambda or a parenthesized term. */
   private def lambdaOrParenthesized(using Context): Result[Syntax[TermTree]] =
     take(Token.leftParenthesis, "'('").and { (opener) =>
@@ -282,18 +296,34 @@ object Parser:
   private def typeAbstraction(using Context): Result[Syntax[TermTree]] =
     // Take the first bracket
     take(Token.leftBracket, "'['").and { (bracket) =>
-      // Take the type identifier, discard the unnecessary right bracket and the arrow
-      take(Token.identifier, "'identifier'")
-        .andDiscard(take(Token.rightBracket, "']'"))
-        .andDiscard(take(Token.thickArrow, "'=>'"))
-        .and { (name) =>
-          // ...and then map the identifier (name) and the body (e)
-          term.map { (body) =>
-            val parameter = Syntax(TypeTree.Variable(name.text.toString), name.span)
-            Syntax(TermTree.TypeAbstraction(parameter, body), bracket.span.extendedToCover(body.span))
+      // Parse first identifier
+      take(Token.identifier, "'identifier'").and { (first) =>
+        val firstParam = Syntax(TypeTree.Variable(first.text.toString), first.span)
+
+        // Parse zero or more ', id' sequences
+        def more(acc: List[Syntax[TypeTree.Variable]])(using Context): Result[List[Syntax[TypeTree.Variable]]] =
+          takeIf(Token.hasTag(Token.comma)) match
+            case Some(commaRes) =>
+              take(Token.identifier, "'identifier'")(using commaRes.state).and { (n) =>
+                val p = Syntax(TypeTree.Variable(n.text.toString), n.span)
+                more(acc :+ p)
+              }
+            case _ => result(acc)
+
+        more(List(firstParam))(using context.after(first))
+          .andDiscard(take(Token.rightBracket, "']'"))
+          .andDiscard(take(Token.thickArrow, "'=>'"))
+          .and { (params) =>
+            term.map { (body) =>
+              // fold params into nested TypeAbstraction, first param is outermost
+              val nested = params.foldRight(body) { (p, b) =>
+                Syntax(TermTree.TypeAbstraction(p, b), p.span.extendedToCover(b.span))
+              }
+              Syntax(nested.value, bracket.span.extendedToCover(body.span))
+            }
           }
-        }
       }
+    }
 
   /** Parses an arrow type of the form T -> U */
   private def arrowType(using Context): Result[Syntax[TypeTree]] =
@@ -318,6 +348,35 @@ object Parser:
       // Parse the arrowType in the middle and get rid of the right parenthesis
       arrowType.andDiscard(take(Token.rightParenthesis, "')'")).map { (arrow) =>
         arrow
+      }
+    }
+
+  /** Parses a universal type (forall) of the form [T] => U */
+  private def forallType(using Context): Result[Syntax[TypeTree]] =
+    take(Token.leftBracket, "'['").and { (bracket) =>
+      take(Token.identifier, "'identifier'").and { (first) =>
+        val firstParam = Syntax(TypeTree.Variable(first.text.toString), first.span)
+
+        def more(acc: List[Syntax[TypeTree.Variable]])(using Context): Result[List[Syntax[TypeTree.Variable]]] =
+          takeIf(Token.hasTag(Token.comma)) match
+            case Some(commaRes) =>
+              take(Token.identifier, "'identifier'")(using commaRes.state).and { (n) =>
+                val p = Syntax(TypeTree.Variable(n.text.toString), n.span)
+                more(acc :+ p)
+              }
+            case _ => result(acc)
+
+        more(List(firstParam))(using context.after(first))
+          .andDiscard(take(Token.rightBracket, "']'"))
+          .andDiscard(take(Token.thickArrow, "'=>'"))
+          .and { (params) =>
+            typ3.map { (body) =>
+              val nested = params.foldRight(body) { (p, b) =>
+                Syntax(TypeTree.ForAll(p, b), p.span.extendedToCover(b.span))
+              }
+              nested
+            }
+          }
       }
     }
 
@@ -346,6 +405,7 @@ object Parser:
     peek.map((t) => t.tag) match
       case Some(Token.identifier) => typeIdentifier
       case Some(Token.leftParenthesis) => parenthesizedType
+      case Some(Token.leftBracket) => forallType
       case _ => throw expected("type")
 
   /** Parses a type identifier. */

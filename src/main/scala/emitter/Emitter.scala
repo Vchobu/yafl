@@ -100,7 +100,7 @@ object Emitter:
         val unique = s"${name.value.name}_${name.span.start}"
         emitAsValue(initializer, env).and { init =>
           // set the unique local to initializer
-          val setCode = init ++ Rope(s"(local.set $$${unique})")
+          val setCode = init ++ Rope(s" (local.set $$${unique})")
           // extend env for body: push unique onto the name stack
           val pushed = env.updated(name.value.name, unique :: env.getOrElse(name.value.name, Nil))
           emitAsValue(body, pushed).map { b =>
