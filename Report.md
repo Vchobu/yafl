@@ -24,6 +24,10 @@
     - src/main/parser/Parser.scala - function parenthesizedType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L391)
  - **Multiple parameters and arguments** (optional)
    - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
+- **Built-in arithmetic and comparison** (optional)
+   - src/main/optimizer/Optimizer.scala - in function constantFold, [starting from here](https://github.com/Vchobu/yafl/blob/a21a4611b0f1d5ef669c6db50bf3ecce14f77c4c/src/main/scala/optimizer/Optimizer.scala#L48)
+   - src\test\scala\Optimizer.scalatests [starting from here](https://github.com/Vchobu/yafl/blob/a21a4611b0f1d5ef669c6db50bf3ecce14f77c4c/src/test/scala/Optimizer.scala#L14)
+
 
  # Vadym
 
