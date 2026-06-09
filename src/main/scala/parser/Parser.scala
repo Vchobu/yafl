@@ -86,8 +86,6 @@ object Parser:
   }
 
 
-  /** ************************************************************************************** */
-
   /** Parses a simple term or a type application. e.g. f [A] [B]
    *  I used LLM and Mrs. Raccordon to understand */
 
@@ -114,20 +112,19 @@ object Parser:
         // Some(x) : un '[' a été consommé ; x.state = position juste après le [
         case Some(x) =>
           // le '[' a déjà été consommé par takeIf ; on lit le type à partir de x.state
-          val argument = typ3(using x.state) // parse (lit) le type à partir de après la position [
+          val argument = typ3(using x.state)
           // take(k: Token.Tag, s: String)(using Context)
           // si nextToken is tag ] -->consomme ] et retourn Result[Token] (le token + l'état avancé après lui)
-          // garder pour la position
           takeIf(Token.hasTag(Token.comma))(using argument.state) match
             // If next token is a comma, build a node and enter the commaLoop
-            case Some(comma) => 
+            case Some(comma) =>
 
               def commaLoop(commaAcc: Syntax[TermTree])(using Context): Result[Syntax[TermTree]] =
                 val res = typ3 // Get the type after the comma
-                takeIf(Token.hasTag(Token.comma)) match
+                takeIf(Token.hasTag(Token.comma))(using res.state) match
                   case Some(comma) =>
                     val node = Syntax(TermTree.TypeApplication(commaAcc, res.value), commaAcc.span.extendedToCover(comma.value.span))
-                    commaLoop(node)(using res.state)
+                    commaLoop(node)(using comma.state)
                   case None =>
                     val closed = take(Token.rightBracket, "']'")(using res.state) // consume the right bracket after the type
                     // If next token is a right bracket, build the node and loop again
@@ -140,10 +137,7 @@ object Parser:
               val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
               // on span entre début de l'acc à ]
               val span = acc.span.extendedToCover(closed.value.span)
-              // on fait le syntax tree
-              // TypeApplication(acc, type) + sa position source
-              // syntax = TermTree + span (2 positions dans le source file)
-              // TypeApplication != typeApplicsation
+              // on fait le syntax tree ; TypeApplication(acc, type) + sa position source (TypeApplication != typeApplication)
               val node = Syntax(TermTree.TypeApplication(acc, argument.value), span)
               loop(node)(using closed.state) // recommence pour un [ suivant
         // pas de [ = on s'arrête et on retourne l'accumulateur
@@ -151,8 +145,7 @@ object Parser:
           result(acc)
     // lit un terme simple
     val base = simpleTerm // f [A] [B] avec base.value = f et base.state = après f
-    // base.value = arbre syntaxique du simpleTerm
-    // base.state = position du curseur après le simpleTerm
+    // base.value = arbre syntaxique du simpleTerm ; base.state = position du curseur après le simpleTerm
     loop(base.value)(using base.state) // démarre avec f --> on cherche le prochain [ --> [A] [B]
 
   private def recursiveAbstraction(using Context): Result[Syntax[TermTree]] = {
@@ -173,7 +166,6 @@ object Parser:
     }
   }
 
-  /** ************************************************************************************** */
 
   /** Parses a simple term. */
   private def simpleTerm(using Context): Result[Syntax[TermTree]] =
