@@ -14,6 +14,7 @@
     - src/main/parser/Parser.scala - function [starts from the line 166](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L166)
 
  # Raphael
+
  ### Assigned tasks:
  - **Type abstractions** (required)
     - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
@@ -22,7 +23,7 @@
  - **Parenthesized types** (required)
     - src/main/parser/Parser.scala - function parenthesizedType [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L391)
  - **Multiple parameters and arguments** (optional)
-   - src/main/parser/Parser.scala - function 
+   - src/main/parser/Parser.scala - function typeAbstraction() [starts here](https://github.com/Vchobu/yafl/blob/c5e38d9c9076ffc930f5ee6b2fa11122f51fb6fc/src/main/scala/parser/Parser.scala#L343)
 
  # Vadym
 
@@ -35,6 +36,8 @@
     - src/main/parser/Parser.scala - function [starts from the line 220](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L220)
 - **Universal types (aka _forall_)** (required)
     - src/main/parser/Parser.scala - function [starts from the line 355](https://github.com/Vchobu/yafl/blob/53c1f4e7d78670d41c62109a1c9209a4b1518b71/src/main/scala/parser/Parser.scala#L354)
+
+Note: some tasks point to the same code, because the same function was improved to handle different functions.
 
  ## LLM usage
 

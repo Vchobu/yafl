@@ -45,7 +45,23 @@ object Optimizer:
         val n = f match
           case InfixOperator.Add => lhs + rhs
           case InfixOperator.Sub => lhs - rhs
-        Some(Syntax(TermTree.IntegerLiteral(n), tree.span))
+          case InfixOperator.Mul => lhs * rhs
+          case InfixOperator.Div => lhs / rhs
+
+          case InfixOperator.Eq => lhs == rhs
+          case InfixOperator.Neq => lhs != rhs
+          case InfixOperator.Lt => lhs < rhs
+          case InfixOperator.Le => lhs <= rhs
+          case InfixOperator.Gt => lhs > rhs
+          case InfixOperator.Ge => lhs >= rhs
+
+          case InfixOperator.And => lhs & rhs
+          case InfixOperator.Or => lhs | rhs
+
+        n match
+          case x: Boolean => Some(Syntax(TermTree.BooleanLiteral(x), tree.span))
+          case x: Int => Some(Syntax(TermTree.IntegerLiteral(x), tree.span))
+        
       case _ => None
 
 end Optimizer

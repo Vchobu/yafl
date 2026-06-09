@@ -118,7 +118,6 @@ object Parser:
           // take(k: Token.Tag, s: String)(using Context)
           // si nextToken is tag ] -->consomme ] et retourn Result[Token] (le token + l'état avancé après lui)
           // garder pour la position
-          /** **** Multiple type arguments **** */
           takeIf(Token.hasTag(Token.comma))(using argument.state) match
             // If next token is a comma, build a node and enter the commaLoop
             case Some(comma) => 
@@ -138,7 +137,6 @@ object Parser:
               val node = Syntax(TermTree.TypeApplication(acc, argument.value), acc.span.extendedToCover(comma.value.span))
               commaLoop(node)(using comma.state)
             case None =>
-            /** **** Multiple type arguments **** */
               val closed = take(Token.rightBracket, "']'")(using argument.state) // consomme le ]
               // on span entre début de l'acc à ]
               val span = acc.span.extendedToCover(closed.value.span)
@@ -156,12 +154,6 @@ object Parser:
     // base.value = arbre syntaxique du simpleTerm
     // base.state = position du curseur après le simpleTerm
     loop(base.value)(using base.state) // démarre avec f --> on cherche le prochain [ --> [A] [B]
-
-  /**  keyword 'fix'
-   *   using typ3
-   *   e.g. fix loop : Int -> Int = (n : Int) => n
-   *
-   * */
 
   private def recursiveAbstraction(using Context): Result[Syntax[TermTree]] = {
     // consomme le mot-clé 'fix'    opener = le token 'fix' qui marque le début du span / puis met dans opener
